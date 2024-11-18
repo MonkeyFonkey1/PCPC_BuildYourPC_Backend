@@ -1,10 +1,13 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import connectDB from './config/db';
+import testRoutes from './routes/test';
 
 dotenv.config();
+connectDB();
+
 
 const app = express();
-
 // Middleware
 app.use(express.json());
 
@@ -12,6 +15,8 @@ app.use(express.json());
 app.get('/', (req, res) => {
     res.send('PCPC-Build-Your-PC Backend is Running');
 });
+
+app.use('/test', testRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
