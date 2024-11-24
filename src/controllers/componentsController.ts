@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Component from '../models/component';
+import mongoose from 'mongoose';
 
 // Fetch all components
 export const getAllComponents = async (req: Request, res: Response) => {
@@ -44,17 +45,24 @@ export const addComponent = async (req: Request, res: Response) => {
 };
 
 export const updateComponent = async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params; // Extract ID from URL
+    const updates = req.body; // Extract update fields from the request body
+
     try {
-        const updatedComponent = await Component.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true }
-        );
+        // Validate ObjectId
+        if (!mongoose.isValidObjectId(id)) {
+            res.status(400).json({ message: 'Invalid ObjectId format' });
+            return;
+        }
+
+        // Perform the update
+        const updatedComponent = await Component.findByIdAndUpdate(id, updates, { new: true });
         if (!updatedComponent) {
             res.status(404).json({ message: 'Component not found' });
             return;
         }
-        res.json(updatedComponent);
+
+        res.json(updatedComponent); // Return the updated document
     } catch (error) {
         res.status(500).json({ message: 'Error updating component', error });
     }

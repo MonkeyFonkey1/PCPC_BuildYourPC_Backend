@@ -2,7 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import connectDB from './config/db';
 import testRoutes from './routes/test';
-import componentsRoutes from './routes/components';
+import componentsRoutes from './routes/componentsRoute';
 
 dotenv.config();
 connectDB();
@@ -19,9 +19,9 @@ app.get('/', (req, res) => {
     res.send('PCPC-Build-Your-PC Backend is Running');
 });
 
-app.use('/test', testRoutes);
+app.use('/api/test', testRoutes);
 
-app.use('/components', componentsRoutes);
+app.use('/api/components', componentsRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
