@@ -5,14 +5,18 @@ import {
     createOrUpdateBuild,
     deleteBuildById,
     validateSessionBuild,
+    validateComponentStepByStep,
 } from '../controllers/sessionBuildsController';
 
 const router = express.Router();
 
-router.get('/:sessionId/builds', getAllBuildsInSession); // Get all builds in a session
-router.get('/:sessionId/builds/:buildId', getBuildById); // Get a specific build
-router.post('/:sessionId/builds', createOrUpdateBuild); // Create or update a build
-router.delete('/:sessionId/builds/:buildId', deleteBuildById); // Delete a build
-router.post('/:sessionId/builds/validate', validateSessionBuild); // Validate compatibility
+router.get('/:sessionId/builds', getAllBuildsInSession);
+router.get('/:sessionId/builds/:buildId', getBuildById);
+router.post('/:sessionId/builds', createOrUpdateBuild);
+router.delete('/:sessionId/builds/:buildId', deleteBuildById);
+
+// Validation Routes
+router.post('/:sessionId/builds/validate', validateSessionBuild); // Full build validation
+router.post('/:sessionId/builds/step/validate', validateComponentStepByStep); // Step-by-step validation
 
 export default router;
