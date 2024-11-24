@@ -1,16 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
+import { componentSchema, componentCreationSchema } from '../schemas/componentSchema';
 
+// Middleware for validating component updates (PUT)
 export const validateComponent = (req: Request, res: Response, next: NextFunction): void => {
-    const { type, brand, model, price, specs } = req.body;
-
-    if (!type || !brand || !model || !price || !specs) {
-        return next(new Error('Missing required fields'));
+    const { error } = componentSchema.validate(req.body, { abortEarly: false }); 
+    if (error) {
+        res.status(400).json({ message: 'Validation error', details: error.details });
+        return;
     }
+    next();
+};
 
-    if (typeof price !== 'number' || price <= 0) {
-        return next(new Error('Invalid price value'));
+// Middleware for validating component creation (POST)
+export const validateComponentForCreation = (req: Request, res: Response, next: NextFunction): void => {
+    const { error } = componentCreationSchema.validate(req.body, { abortEarly: false }); 
+    if (error) {
+        res.status(400).json({ message: 'Validation error', details: error.details });
+        return;
     }
-
-    // If validation passes, continue to the next middleware
     next();
 };
