@@ -12,10 +12,7 @@ import {
     validateComponentForCreation,
 } from '../middleware/validateComponent';
 
-
-
 const router = express.Router();
-
 
 router.get('/', getAllComponents); // Fetch all components
 router.get('/search', searchComponents); // Search components

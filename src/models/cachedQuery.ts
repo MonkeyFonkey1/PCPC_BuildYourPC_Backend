@@ -14,4 +14,7 @@ const CachedQuerySchema: Schema = new Schema({
     timestamp: { type: Date, default: Date.now },
 });
 
-export default mongoose.model<ICachedQuery>('cached_queries', CachedQuerySchema);
+export default mongoose.model<ICachedQuery>(
+    'cached_queries',
+    CachedQuerySchema
+);

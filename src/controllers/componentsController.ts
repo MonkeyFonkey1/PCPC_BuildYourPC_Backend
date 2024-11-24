@@ -12,19 +12,16 @@ export const getAllComponents = async (req: Request, res: Response) => {
     }
 };
 
-// Search components with filters
+// Search components to support compatibility filtering
 export const searchComponents = async (req: Request, res: Response) => {
-    const { type, price_min, price_max, brand } = req.query;
+    const { type, socket, memoryType, wattage } = req.query;
 
     try {
         const query: any = {};
         if (type) query.type = type;
-        if (brand) query.brand = brand;
-        if (price_min || price_max) {
-            query.price = {};
-            if (price_min) query.price.$gte = Number(price_min);
-            if (price_max) query.price.$lte = Number(price_max);
-        }
+        if (socket) query['specs.socket'] = socket; // Filter by socket
+        if (memoryType) query['specs.memoryType'] = memoryType; // Filter by memory type
+        if (wattage) query['specs.wattage'] = { $gte: Number(wattage) }; // Filter by minimum wattage
 
         const components = await Component.find(query);
         res.json(components);
@@ -44,7 +41,10 @@ export const addComponent = async (req: Request, res: Response) => {
     }
 };
 
-export const updateComponent = async (req: Request, res: Response): Promise<void> => {
+export const updateComponent = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
     const { id } = req.params; // Extract ID from URL
     const updates = req.body; // Extract update fields from the request body
 
@@ -56,7 +56,11 @@ export const updateComponent = async (req: Request, res: Response): Promise<void
         }
 
         // Perform the update
-        const updatedComponent = await Component.findByIdAndUpdate(id, updates, { new: true });
+        const updatedComponent = await Component.findByIdAndUpdate(
+            id,
+            updates,
+            { new: true }
+        );
         if (!updatedComponent) {
             res.status(404).json({ message: 'Component not found' });
             return;
@@ -69,9 +73,14 @@ export const updateComponent = async (req: Request, res: Response): Promise<void
 };
 
 // Delete a component
-export const deleteComponent = async (req: Request, res: Response): Promise<void> => {
+export const deleteComponent = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
     try {
-        const deletedComponent = await Component.findByIdAndDelete(req.params.id);
+        const deletedComponent = await Component.findByIdAndDelete(
+            req.params.id
+        );
         if (!deletedComponent) {
             res.status(404).json({ message: 'Component not found' });
             return;
@@ -81,5 +90,3 @@ export const deleteComponent = async (req: Request, res: Response): Promise<void
         res.status(500).json({ message: 'Error deleting component', error });
     }
 };
-
-
