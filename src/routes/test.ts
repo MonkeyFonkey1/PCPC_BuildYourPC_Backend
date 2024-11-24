@@ -12,7 +12,10 @@ router.get('/session-builds', async (req, res) => {
         const builds = await SessionBuild.find();
         res.json(builds);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching session builds', error });
+        res.status(500).json({
+            message: 'Error fetching session builds',
+            error,
+        });
     }
 });
 
@@ -22,18 +25,24 @@ router.get('/cached-queries', async (req, res) => {
         const queries = await CachedQuery.find();
         res.json(queries);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching cached queries', error });
+        res.status(500).json({
+            message: 'Error fetching cached queries',
+            error,
+        });
     }
 });
 
 // Fetch all PCPartPicker data
 router.get('/pcpartpicker_data', async (req, res) => {
-    try {      
+    try {
         const data = await PcPartPickerData.find();
-       // console.log('Fetched PcPartPickerData:', data); // Debug log
+        // console.log('Fetched PcPartPickerData:', data); // Debug log
         res.json(data);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching PCPartPicker data', error });
+        res.status(500).json({
+            message: 'Error fetching PCPartPicker data',
+            error,
+        });
     }
 });
 

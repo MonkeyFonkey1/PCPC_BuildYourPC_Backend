@@ -7,7 +7,6 @@ interface IPcPartPickerData extends Document {
 }
 
 const PcPartPickerDataSchema: Schema = new Schema({
-    
     type: { type: String, required: true },
     data: { type: Object, required: true },
     fetched_at: { type: Date, default: Date.now },
@@ -18,4 +17,3 @@ export default mongoose.model<IPcPartPickerData>(
     PcPartPickerDataSchema, // Schema
     'pcpartpicker_data' // Explicitly set the collection name
 );
-
