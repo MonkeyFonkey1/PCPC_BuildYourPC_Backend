@@ -6,10 +6,7 @@ import Component from '../models/component';
 import { CompatibilityChecker } from '../utils/CompatibiltyChecker';
 
 // Retrieve all builds in a session
-export const getAllBuildsInSession = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const getAllBuildsInSession = async (req: Request, res: Response): Promise<void> => {
     try {
         const { sessionId } = req.params;
         const sessionBuild = await SessionBuild.findOne({ sessionId });
@@ -26,10 +23,7 @@ export const getAllBuildsInSession = async (
 };
 
 // Retrieve a specific build
-export const getBuildById = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const getBuildById = async (req: Request, res: Response): Promise<void> => {
     try {
         const { sessionId, buildId } = req.params;
         const sessionBuild = await SessionBuild.findOne({ sessionId });
@@ -53,18 +47,14 @@ export const getBuildById = async (
 };
 
 // Create or update a specific build
-export const createOrUpdateBuild = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const createOrUpdateBuild = async (req: Request, res: Response): Promise<void> => {
     try {
         const { sessionId } = req.params;
         const { buildId, components, totalPrice, aiGenerated } = req.body;
 
         // Generate createdAt and expiresAt if not provided
         const createdAt = req.body.createdAt || new Date();
-        const expiresAt =
-            req.body.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // One week from now
+        const expiresAt = req.body.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // One week
 
         // Validate the input using Joi
         const { error } = sessionBuildSchema.validate(
@@ -86,9 +76,7 @@ export const createOrUpdateBuild = async (
             { new: true, upsert: true }
         );
 
-        const existingBuildIndex = sessionBuild.builds.findIndex(
-            (b) => b.buildId === buildId
-        );
+        const existingBuildIndex = sessionBuild.builds.findIndex((b) => b.buildId === buildId);
 
         if (existingBuildIndex !== -1) {
             // Update existing build
@@ -123,10 +111,7 @@ export const createOrUpdateBuild = async (
 };
 
 // Delete a specific build
-export const deleteBuildById = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const deleteBuildById = async (req: Request, res: Response): Promise<void> => {
     try {
         const { sessionId, buildId } = req.params;
         const sessionBuild = await SessionBuild.findOne({ sessionId });
@@ -136,9 +121,7 @@ export const deleteBuildById = async (
             return;
         }
 
-        sessionBuild.builds = sessionBuild.builds.filter(
-            (b) => b.buildId !== buildId
-        );
+        sessionBuild.builds = sessionBuild.builds.filter((b) => b.buildId !== buildId);
         await sessionBuild.save();
 
         res.json({ message: 'Build deleted successfully' });
@@ -147,15 +130,12 @@ export const deleteBuildById = async (
     }
 };
 
-// Validate compatibility of session build components
-export const validateSessionBuild = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+// Validate the entire build for compatibility
+export const validateSessionBuild = async (req: Request, res: Response): Promise<void> => {
     try {
         const { sessionId } = req.body;
 
-        const sessionBuild = await SessionBuild.findOne({ sessionId: sessionId.trim() });
+        const sessionBuild = await SessionBuild.findOne({ sessionId });
         if (!sessionBuild) {
             res.status(404).json({ message: 'Session build not found' });
             return;
@@ -183,5 +163,46 @@ export const validateSessionBuild = async (
             message: 'Error validating compatibility',
             error,
         });
+    }
+};
+
+
+export const validateComponentStepByStep = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { sessionId } = req.params;
+        const { type, modelName } = req.body;
+
+        const sessionBuild = await SessionBuild.findOne({ sessionId });
+        if (!sessionBuild) {
+            res.status(404).json({ message: 'Session not found' });
+            return;
+        }
+
+        const newComponent = await Component.findOne({ modelName });
+        if (!newComponent) {
+            res.status(404).json({ message: `Component ${modelName} not found` });
+            return;
+        }
+
+        const currentComponents = sessionBuild.builds[0]?.components || [];
+        const existingComponents = await Component.find({
+            modelName: { $in: currentComponents.map((c) => c.modelName) },
+        });
+
+        const checker = new CompatibilityChecker([...existingComponents, newComponent]);
+        const compatibilityIssues = checker.validate();
+
+        if (compatibilityIssues.length > 0) {
+            res.status(400).json({
+                message: 'Compatibility issues found',
+                issues: compatibilityIssues,
+            });
+        } else {
+            res.status(200).json({
+                message: `Component ${type} (${modelName}) is compatible.`,
+            });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Error validating component', error });
     }
 };
