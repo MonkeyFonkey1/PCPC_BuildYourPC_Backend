@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import SessionBuild from '../models/sessionBuild';
 import { sessionBuildSchema } from '../schemas/sesionBuildSchema';
 import { v4 as uuidv4 } from 'uuid';
-import Component from '../models/component';
+import Component, { IComponent } from '../models/component';
 import { CompatibilityChecker } from '../utils/CompatibiltyChecker';
 
 // Retrieve all builds in a session
@@ -142,6 +142,7 @@ export const validateSessionBuild = async (req: Request, res: Response): Promise
         }
 
         const components = sessionBuild.builds.flatMap((b) => b.components);
+
 
         const componentDetails = await Component.find({
             modelName: { $in: components.map((c) => c.modelName) },
