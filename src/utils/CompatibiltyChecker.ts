@@ -6,113 +6,116 @@ export class CompatibilityChecker {
     constructor(components: IComponent[]) {
         this.components = components;
     }
-    checkCPUandMotherboard(): string | null {
-        const cpu = this.components.find((c) => c.type === 'CPU');
-        const motherboard = this.components.find(
-            (c) => c.type === 'Motherboard'
-        );
-
-        if (
-            cpu &&
-            motherboard &&
-            cpu.specs.socket !== motherboard.specs.socket
-        ) {
-            return 'CPU and Motherboard sockets do not match.';
-        }
-        return null;
-    }
-
-    checkRAMandMotherboard(): string | null {
-        const ram = this.components.find((c) => c.type === 'RAM');
-        const motherboard = this.components.find(
-            (c) => c.type === 'Motherboard'
-        );
-
-        if (
-            ram &&
-            motherboard &&
-            ram.specs.memoryType !== motherboard.specs.memoryType
-        ) {
-            return 'RAM type is not supported by the Motherboard.';
-        }
-        return null;
-    }
-
-    checkPSUandPower(): string | null {
-        const psu = this.components.find((c) => c.type === 'PSU');
-        const cpu = this.components.find((c) => c.type === 'CPU');
-        const gpu = this.components.find((c) => c.type === 'GPU');
-
-        if (psu) {
-            const requiredWattage =
-                (gpu?.specs.powerDraw || 0) + (cpu?.specs.powerDraw || 0);
-            if (psu.specs.wattage < requiredWattage) {
-                return 'PSU wattage is insufficient for the selected GPU and CPU.';
-            }
-        }
-        return null;
-    }
-
-    checkCaseAndMotherboard(): string | null {
-        const caseComponent = this.components.find((c) => c.type === 'Case');
-        const motherboard = this.components.find(
-            (c) => c.type === 'Motherboard'
-        );
-
-        if (
-            caseComponent &&
-            motherboard &&
-            caseComponent.specs.formFactor !== motherboard.specs.formFactor
-        ) {
-            return 'Motherboard form factor does not fit in the selected case.';
-        }
-        return null;
-    }
-
-    checkStorageAndMotherboard(): string | null {
-        const motherboard = this.components.find(
-            (c) => c.type === 'Motherboard'
-        );
-        const storage = this.components.filter((c) => c.type === 'Storage');
-
-        if (storage.length > 0 && motherboard) {
-            const availableSataPorts = motherboard.specs.sataPorts || 0;
-            const availableNvmeSlots = motherboard.specs.nvmeSlots || 0;
-            const sataDevices = storage.filter(
-                (s) => s.specs.connectionType === 'SATA'
-            ).length;
-            const nvmeDevices = storage.filter(
-                (s) => s.specs.connectionType === 'NVMe'
-            ).length;
-
-            if (sataDevices > availableSataPorts) {
-                return 'Not enough SATA ports on the Motherboard for the selected storage devices.';
-            }
-
-            if (nvmeDevices > availableNvmeSlots) {
-                return 'Not enough NVMe slots on the Motherboard for the selected storage devices.';
-            }
-        }
-        return null;
-    }
 
     validate(): string[] {
         const issues: string[] = [];
 
-        const checks = [
-            this.checkCPUandMotherboard(),
-            this.checkRAMandMotherboard(),
-            this.checkPSUandPower(),
-            this.checkCaseAndMotherboard(),
-            this.checkStorageAndMotherboard(),
-        ];
+        const cpu = this.components.find(c => c.type === 'CPU');
+        const motherboard = this.components.find(c => c.type === 'Motherboard');
+        const ram = this.components.find(c => c.type === 'RAM');
+        const gpu = this.components.find(c => c.type === 'GPU');
+        const psu = this.components.find(c => c.type === 'PSU');
+        const pcCase = this.components.find(c => c.type === 'PC Case' || c.type === 'Case');
+        const storage = this.components.filter(c => c.type === 'Storage');
 
-        for (const check of checks) {
-            if (check) {
-                issues.push(check);
+        console.log("🔍 Starting Compatibility Checks...");
+
+        // ✅ CPU & Motherboard Socket Compatibility
+        if (cpu && motherboard) {
+            const cpuSocket = cpu.socket?.trim().toLowerCase() || cpu.specs.socket?.trim().toLowerCase();
+            const motherboardSocket = motherboard.socket?.trim().toLowerCase() || motherboard.specs.socket?.trim().toLowerCase();
+
+            console.log(`CPU Socket: "${cpuSocket}", Motherboard Socket: "${motherboardSocket}"`);
+
+            if (cpuSocket && motherboardSocket && cpuSocket !== motherboardSocket) {
+                issues.push(`❌ CPU (${cpu.modelName}) socket (${cpuSocket}) is incompatible with Motherboard (${motherboard.modelName}) socket (${motherboardSocket}).`);
+            }
+        } else {
+            console.log("⚠️ CPU or Motherboard not found.");
+        }
+
+        // ✅ RAM & Motherboard Memory Type
+        if (ram && motherboard) {
+            console.log(`Checking RAM (${ram.modelName}) and Motherboard (${motherboard.modelName}) memory type compatibility...`);
+            if (ram.specs.memoryType !== motherboard.specs.memoryType) {
+                issues.push(`❌ RAM (${ram.modelName}) type (${ram.specs.memoryType}) is not supported by Motherboard (${motherboard.modelName}) which supports ${motherboard.specs.memoryType}.`);
             }
         }
 
+        // ✅ PSU Wattage Check (CPU + GPU Power Draw)
+        if (psu) {
+            console.log("Checking PSU wattage...");
+            const cpuPower = parseInt(cpu?.specs.tdp || '0');
+            const gpuPower = parseInt(gpu?.specs.tdp || '0');
+            const totalPowerNeeded = cpuPower + gpuPower;
+
+            if (psu.specs.wattage < totalPowerNeeded) {
+                issues.push(`❌ PSU (${psu.modelName}) wattage (${psu.specs.wattage}W) is insufficient. Required: ${totalPowerNeeded}W.`);
+            }
+        }
+
+        // ✅ GPU Size & PC Case Size
+        if (gpu && pcCase) {
+            console.log("Checking GPU size and PC case compatibility...");
+            const gpuLength = parseInt(gpu.specs.length || '0');
+            const caseGpuMaxLength = parseInt(pcCase.specs.gpuMaxLength || '0');
+
+            if (gpuLength > caseGpuMaxLength) {
+                issues.push(`❌ GPU (${gpu.modelName}) length (${gpuLength}mm) exceeds PC Case (${pcCase.modelName}) limit (${caseGpuMaxLength}mm).`);
+            }
+        }
+
+        // ✅ Storage Compatibility (SATA/NVMe)
+        if (motherboard && storage.length) {
+            console.log("Checking Storage compatibility with Motherboard...");
+            const availableSataPorts = motherboard.specs.sataPorts || 0;
+            const availableNvmeSlots = motherboard.specs.nvmeSlots || 0;
+
+            const sataDrives = storage.filter(s => s.specs.connectionType === 'SATA').length;
+            const nvmeDrives = storage.filter(s => s.specs.connectionType === 'NVMe').length;
+
+            if (sataDrives > availableSataPorts) {
+                issues.push(`❌ Not enough SATA ports on Motherboard (${motherboard.modelName}). Available: ${availableSataPorts}, Required: ${sataDrives}.`);
+            }
+
+            if (nvmeDrives > availableNvmeSlots) {
+                issues.push(`❌ Not enough NVMe slots on Motherboard (${motherboard.modelName}). Available: ${availableNvmeSlots}, Required: ${nvmeDrives}.`);
+            }
+        }
+
+        console.log("🔍 Compatibility Check Complete.");
         return issues;
+    }
+
+    // New Methods (For Real-Time Filtering)
+    getCompatibleCPUs(motherboard: IComponent, allCPUs: IComponent[]): IComponent[] {
+        return allCPUs.filter(cpu => cpu.socket === motherboard.socket || cpu.specs.socket === motherboard.specs.socket);
+    }
+
+    getCompatibleRAM(motherboard: IComponent, allRAMs: IComponent[]): IComponent[] {
+        return allRAMs.filter(ram => ram.specs.memoryType === motherboard.specs.memoryType);
+    }
+
+    getCompatiblePSUs(cpu: IComponent, gpu: IComponent, allPSUs: IComponent[]): IComponent[] {
+        const requiredWattage = (cpu?.specs.powerDraw || 0) + (gpu?.specs.powerDraw || 0);
+        return allPSUs.filter(psu => psu.specs.wattage >= requiredWattage);
+    }
+
+    getCompatibleCases(motherboard: IComponent, allCases: IComponent[]): IComponent[] {
+        return allCases.filter(pcCase => pcCase.specs.formFactor === motherboard.specs.formFactor);
+    }
+
+    getCompatibleStorage(motherboard: IComponent, allStorage: IComponent[]): IComponent[] {
+        const availableSataPorts = motherboard.specs.sataPorts || 0;
+        const availableNvmeSlots = motherboard.specs.nvmeSlots || 0;
+
+        return allStorage.filter(storage => {
+            if (storage.specs.connectionType === 'SATA') {
+                return availableSataPorts > 0;
+            } else if (storage.specs.connectionType === 'NVMe') {
+                return availableNvmeSlots > 0;
+            }
+            return false;
+        });
     }
 }
