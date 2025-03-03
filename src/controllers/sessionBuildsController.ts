@@ -3,6 +3,7 @@ import SessionBuild from '../models/sessionBuild';
 import { sessionBuildSchema } from '../schemas/sesionBuildSchema';
 import { v4 as uuidv4 } from 'uuid';
 import Component, { IComponent } from '../models/component';
+import Component, { IComponent } from '../models/component';
 import { CompatibilityChecker } from '../utils/CompatibiltyChecker';
 
 // Retrieve all builds in a session
