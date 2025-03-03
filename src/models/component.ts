@@ -1,10 +1,10 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-interface IComponent extends Document {
+export interface IComponent extends Document {
     type: string;
     brand: string;
     modelName: string;
-    socket?: string;
+    socket?: string; // Optional field
     price: number;
     specs: Record<string, any>;
     timestamp: Date;
