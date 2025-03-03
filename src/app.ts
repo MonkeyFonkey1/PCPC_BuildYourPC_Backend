@@ -4,6 +4,7 @@ import connectDB from './config/db';
 import testRoutes from './routes/test';
 import componentsRoutes from './routes/componentsRoute';
 import sessionBuildsRoutes from './routes/sessionBuildsRoute';
+import autoBuildRoutes from './routes/autoBuildRoute';
 
 dotenv.config();
 connectDB();
@@ -19,6 +20,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/components', componentsRoutes);
 app.use('/api/session-builds', sessionBuildsRoutes);
+app.use('/api/automatic-builds', autoBuildRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
