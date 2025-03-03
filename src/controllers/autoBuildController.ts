@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import Component from '../models/component';
 import SessionBuild from '../models/sessionBuild';
-import { CompatibilityChecker } from '../utils/CompatibiltyChecker';
-import { getRecommendedParts, getComponentDetails } from '../services/chatgptService';
+import { AICompatibilityChecker } from '../utils/AICompatibilityChecker'; // NEW FILE
+import { getRecommendedParts, getComponentDetails, getReplacementComponent } from '../services/chatgptService';
 import { IComponent } from '../models/component';
+
+const MAX_RETRIES = 3;
 
 export const generateAutomaticBuild = async (req: Request, res: Response): Promise<void> => {
     const { budget, preferences, sessionId } = req.body;
@@ -11,7 +13,7 @@ export const generateAutomaticBuild = async (req: Request, res: Response): Promi
     try {
         const recommendedParts = await getRecommendedParts(budget, preferences);
 
-        const components: IComponent[] = [];
+        let components: IComponent[] = [];
 
         for (const [type, modelName] of Object.entries(recommendedParts) as [string, string][]) {
             const normalizedModelName = modelName.trim();
@@ -20,7 +22,7 @@ export const generateAutomaticBuild = async (req: Request, res: Response): Promi
 
             if (!component) {
                 console.log(`Component ${normalizedModelName} not found in database. Fetching details from ChatGPT...`);
-                
+
                 const newComponentDetails = await getComponentDetails(type, normalizedModelName);
 
                 if (newComponentDetails && newComponentDetails.modelName) {
@@ -44,12 +46,13 @@ export const generateAutomaticBuild = async (req: Request, res: Response): Promi
             }
         }
 
-        const checker = new CompatibilityChecker(components);
+        // 🔄 Use AI-Specific Compatibility Checker
+        const checker = new AICompatibilityChecker(components);
         const compatibilityIssues = checker.validate();
 
         if (compatibilityIssues.length > 0) {
             res.status(400).json({
-                message: "Compatibility issues found",
+                message: "Compatibility issues found in AI build",
                 issues: compatibilityIssues
             });
             return;
@@ -66,7 +69,7 @@ export const generateAutomaticBuild = async (req: Request, res: Response): Promi
             })),
             totalPrice,
             createdAt: new Date(),
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week expiration
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
             aiGenerated: true
         };
 
