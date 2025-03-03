@@ -12,21 +12,56 @@ export const getAllComponents = async (req: Request, res: Response) => {
     }
 };
 
-// Search components with filters
+// Search components to support compatibility filtering, sorting, price range, and type filtering
 export const searchComponents = async (req: Request, res: Response) => {
-    const { type, price_min, price_max, brand } = req.query;
+    const { type, socket, memoryType, wattage, priceMin, priceMax, sortBy, selectedMotherboard } = req.query;
 
     try {
         const query: any = {};
+
         if (type) query.type = type;
-        if (brand) query.brand = brand;
-        if (price_min || price_max) {
-            query.price = {};
-            if (price_min) query.price.$gte = Number(price_min);
-            if (price_max) query.price.$lte = Number(price_max);
+        if (socket) query['specs.socket'] = socket;
+        if (memoryType) query['specs.memoryType'] = memoryType;
+        if (wattage) query['specs.wattage'] = { $gte: Number(wattage) };
+
+        if (priceMin && priceMax) {
+            query.price = { $gte: Number(priceMin), $lte: Number(priceMax) };
+        } else if (priceMin) {
+            query.price = { $gte: Number(priceMin) };
+        } else if (priceMax) {
+            query.price = { $lte: Number(priceMax) };
         }
 
-        const components = await Component.find(query);
+        // Real-time compatibility filtering if motherboard is selected
+        if (selectedMotherboard) {
+            const motherboard = await Component.findOne({ modelName: selectedMotherboard });
+
+            if (motherboard) {
+                if (type === 'CPU') {
+                    query['specs.socket'] = motherboard.specs.socket;
+                }
+                if (type === 'RAM') {
+                    query['specs.memoryType'] = motherboard.specs.memoryType;
+                }
+                if (type === 'Storage') {
+                    query['$or'] = [
+                        { 'specs.connectionType': 'SATA' },
+                        { 'specs.connectionType': 'NVMe' }
+                    ];
+                }
+            }
+        }
+
+        let sortQuery = {};
+        if (sortBy === 'priceAsc') {
+            sortQuery = { price: 1 };
+        } else if (sortBy === 'priceDesc') {
+            sortQuery = { price: -1 };
+        } else if (sortBy === 'brand') {
+            sortQuery = { brand: 1 };
+        }
+
+        const components = await Component.find(query).sort(sortQuery);
         res.json(components);
     } catch (error) {
         res.status(500).json({ message: 'Error searching components', error });
@@ -44,32 +79,31 @@ export const addComponent = async (req: Request, res: Response) => {
     }
 };
 
-export const updateComponent = async (req: Request, res: Response): Promise<void> => {
-    const { id } = req.params; // Extract ID from URL
-    const updates = req.body; // Extract update fields from the request body
+// Update component
+export const updateComponent = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const updates = req.body;
 
     try {
-        // Validate ObjectId
         if (!mongoose.isValidObjectId(id)) {
             res.status(400).json({ message: 'Invalid ObjectId format' });
             return;
         }
 
-        // Perform the update
         const updatedComponent = await Component.findByIdAndUpdate(id, updates, { new: true });
         if (!updatedComponent) {
             res.status(404).json({ message: 'Component not found' });
             return;
         }
 
-        res.json(updatedComponent); // Return the updated document
+        res.json(updatedComponent);
     } catch (error) {
         res.status(500).json({ message: 'Error updating component', error });
     }
 };
 
 // Delete a component
-export const deleteComponent = async (req: Request, res: Response): Promise<void> => {
+export const deleteComponent = async (req: Request, res: Response) => {
     try {
         const deletedComponent = await Component.findByIdAndDelete(req.params.id);
         if (!deletedComponent) {
@@ -81,5 +115,3 @@ export const deleteComponent = async (req: Request, res: Response): Promise<void
         res.status(500).json({ message: 'Error deleting component', error });
     }
 };
-
-
