@@ -3,7 +3,6 @@ import SessionBuild from '../models/sessionBuild';
 import { sessionBuildSchema } from '../schemas/sesionBuildSchema';
 import { v4 as uuidv4 } from 'uuid';
 import Component, { IComponent } from '../models/component';
-import Component, { IComponent } from '../models/component';
 import { CompatibilityChecker } from '../utils/CompatibiltyChecker';
 
 // Retrieve all builds in a session
@@ -142,7 +141,7 @@ export const validateSessionBuild = async (req: Request, res: Response): Promise
             return;
         }
 
-        // Step 2: Extract components and normalize names
+    // Extract components and normalize names
         const components = sessionBuild.builds.flatMap((b) => b.components);
         const uniqueComponents = components.filter((component, index, self) => {
             if (!component || Object.keys(component).length === 0) return false;
@@ -153,22 +152,21 @@ export const validateSessionBuild = async (req: Request, res: Response): Promise
             );
         });
 
-        console.log("Cleaned components array:", uniqueComponents);
+        //console.log("Cleaned components array:", uniqueComponents);
 
         // Normalize model names
         const normalizedModelNames = uniqueComponents.map((c) =>
             c.modelName.trim().toLowerCase()
         );
-        console.log("Normalized Model Names for Query:", normalizedModelNames);
+        //console.log("Normalized Model Names for Query:", normalizedModelNames);
 
-        // Step 3: Query the database
         const fetchedComponents = await Component.find({
             modelName: { $in: normalizedModelNames.map(name => new RegExp(`^${name}$`, 'i')) },
         }).lean();
 
-        console.log("Fetched Components from Database:", fetchedComponents);
+        //console.log("Fetched Components from Database:", fetchedComponents);
 
-        // Step 4: Compare fetched components with required components
+        //Compare fetched components with required components
         const missingComponents = normalizedModelNames.filter(
             (name) =>
                 !fetchedComponents.some((c) => c.modelName.trim().toLowerCase() === name)
