@@ -46,7 +46,6 @@ export const generateAutomaticBuild = async (req: Request, res: Response): Promi
             }
         }
 
-        // 🔄 Use AI-Specific Compatibility Checker
         const checker = new AICompatibilityChecker(components);
         const compatibilityIssues = checker.validate();
 
