@@ -36,4 +36,3 @@ app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
 
-//start the application with npm run dev !! (nodemon)
