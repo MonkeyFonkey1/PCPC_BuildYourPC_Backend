@@ -1,8 +1,25 @@
 import { Request, Response } from 'express';
 import Component from '../models/component';
 import mongoose from 'mongoose';
+import CachedQuery from '../models/cachedQuery';
 
-// Fetch all components
+
+const CACHE_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
+
+
+export const getComponentById = async (req: Request, res: Response) => {
+    try {
+        const component = await Component.findById(req.params.id);
+        if (!component) {
+            res.status(404).json({ message: 'Component not found' });
+            return;
+        }
+        res.json(component);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching component', error });
+    }
+};
+
 export const getAllComponents = async (req: Request, res: Response) => {
     try {
         const components = await Component.find();
@@ -12,63 +29,50 @@ export const getAllComponents = async (req: Request, res: Response) => {
     }
 };
 
-// Search components to support compatibility filtering, sorting, price range, and type filtering
 export const searchComponents = async (req: Request, res: Response) => {
-    const { type, socket, memoryType, wattage, priceMin, priceMax, sortBy, selectedMotherboard } = req.query;
+    const { type, socket, memoryType, wattage, brand, minPrice, maxPrice } = req.query;
+
+    // Build the search query object
+    const query: any = {};
+    if (type) query.type = type;
+    if (socket) query['specs.socket'] = socket;
+    if (memoryType) query['specs.memoryType'] = memoryType;
+    if (wattage) query['specs.wattage'] = { $gte: Number(wattage) };
+    if (brand) query.brand = brand;
+    if (minPrice && maxPrice) query.price = { $gte: Number(minPrice), $lte: Number(maxPrice) };
 
     try {
-        const query: any = {};
+        // 1️⃣ Check Cache First
+        const cachedQuery = await CachedQuery.findOne({
+            query_type: 'component_search',
+            query_params: query,
+            timestamp: { $gte: new Date(Date.now() - CACHE_EXPIRY_MS) },
+        }).lean();
 
-        if (type) query.type = type;
-        if (socket) query['specs.socket'] = socket;
-        if (memoryType) query['specs.memoryType'] = memoryType;
-        if (wattage) query['specs.wattage'] = { $gte: Number(wattage) };
-
-        if (priceMin && priceMax) {
-            query.price = { $gte: Number(priceMin), $lte: Number(priceMax) };
-        } else if (priceMin) {
-            query.price = { $gte: Number(priceMin) };
-        } else if (priceMax) {
-            query.price = { $lte: Number(priceMax) };
+        if (cachedQuery) {
+            console.log('✅ Cache hit: Returning cached results.');
+            return res.json(cachedQuery.results);
         }
 
-        // Real-time compatibility filtering if motherboard is selected
-        if (selectedMotherboard) {
-            const motherboard = await Component.findOne({ modelName: selectedMotherboard });
+        // 2️⃣ No Cache — Perform Real Query
+        const components = await Component.find(query).lean();
 
-            if (motherboard) {
-                if (type === 'CPU') {
-                    query['specs.socket'] = motherboard.specs.socket;
-                }
-                if (type === 'RAM') {
-                    query['specs.memoryType'] = motherboard.specs.memoryType;
-                }
-                if (type === 'Storage') {
-                    query['$or'] = [
-                        { 'specs.connectionType': 'SATA' },
-                        { 'specs.connectionType': 'NVMe' }
-                    ];
-                }
-            }
-        }
+        // 3️⃣ Save Results to Cache
+        await CachedQuery.create({
+            query_type: 'component_search',
+            query_params: query,
+            results: components,
+        });
 
-        let sortQuery = {};
-        if (sortBy === 'priceAsc') {
-            sortQuery = { price: 1 };
-        } else if (sortBy === 'priceDesc') {
-            sortQuery = { price: -1 };
-        } else if (sortBy === 'brand') {
-            sortQuery = { brand: 1 };
-        }
-
-        const components = await Component.find(query).sort(sortQuery);
+        console.log('✅ Cache miss: Fetched fresh data and saved to cache.');
         res.json(components);
+
     } catch (error) {
+        console.error('❌ Error in searchComponents:', error);
         res.status(500).json({ message: 'Error searching components', error });
     }
 };
 
-// Add a new component
 export const addComponent = async (req: Request, res: Response) => {
     try {
         const newComponent = new Component(req.body);
@@ -79,7 +83,6 @@ export const addComponent = async (req: Request, res: Response) => {
     }
 };
 
-// Update component
 export const updateComponent = async (req: Request, res: Response) => {
     const { id } = req.params;
     const updates = req.body;
@@ -102,7 +105,6 @@ export const updateComponent = async (req: Request, res: Response) => {
     }
 };
 
-// Delete a component
 export const deleteComponent = async (req: Request, res: Response) => {
     try {
         const deletedComponent = await Component.findByIdAndDelete(req.params.id);
