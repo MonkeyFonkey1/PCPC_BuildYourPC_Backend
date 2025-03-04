@@ -29,7 +29,7 @@ export const getAllComponents = async (req: Request, res: Response) => {
     }
 };
 
-export const searchComponents = async (req: Request, res: Response) => {
+export const searchComponents = async (req: Request, res: Response): Promise<void> => {
     const { type, socket, memoryType, wattage, brand, minPrice, maxPrice } = req.query;
 
     // Build the search query object
@@ -51,7 +51,7 @@ export const searchComponents = async (req: Request, res: Response) => {
 
         if (cachedQuery) {
             console.log('✅ Cache hit: Returning cached results.');
-            return res.json(cachedQuery.results);
+             res.json(cachedQuery.results);
         }
 
         // 2️⃣ No Cache — Perform Real Query
