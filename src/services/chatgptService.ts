@@ -123,7 +123,7 @@ export async function getComponentDetails(componentType: string, modelName: stri
     const rawContent = response.choices[0]?.message.content || '{}';
     const cleanedContent = cleanGPTResponse(rawContent);
 
-     // Optional log before parsing (helps track future problems)
+     
      if (/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g.test(cleanedContent)) {
         console.warn("⚠️ Possible unquoted keys detected in GPT response.");
     }
@@ -138,7 +138,6 @@ export async function getComponentDetails(componentType: string, modelName: stri
     return componentDetails;
 }
 
-// Fetch replacement component if incompatibility is found
 export async function getReplacementComponent(componentType: string, currentComponent: string, issue: string): Promise<string> {
     const prompt = `
         The component "${currentComponent}" (${componentType}) caused the following compatibility issue: "${issue}".

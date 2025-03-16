@@ -46,8 +46,13 @@ export const getBuildById = async (req: Request, res: Response): Promise<void> =
 
 export const createOrUpdateBuild = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { sessionId } = req.params;
+        let { sessionId } = req.params;
         const { buildId, components, totalPrice, aiGenerated } = req.body;
+
+        
+        if (!sessionId) {
+            sessionId = uuidv4();
+        }
 
         const createdAt = req.body.createdAt || new Date();
         const expiresAt = req.body.expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000);  // 24 hours from now 

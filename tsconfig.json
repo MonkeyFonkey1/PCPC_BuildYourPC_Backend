@@ -1,5 +1,6 @@
 {
     "compilerOptions": {
+        "types": ["node", "express", "express-session"],
         "target": "ES6",
         "module": "commonjs",
         "outDir": "./dist",

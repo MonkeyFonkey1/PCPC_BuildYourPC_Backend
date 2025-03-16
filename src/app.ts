@@ -7,6 +7,7 @@ import autoBuildRoutes from './routes/autoBuildRoute';
 import cron from 'node-cron';
 import { cleanupExpiredSessions } from './services/cleanupService';
 import { cleanupOldCachedQueries } from './services/cleanupService';
+import cors from "cors";
 
 
 dotenv.config();
@@ -26,6 +27,11 @@ cron.schedule('0 * * * *', async () => {
     await cleanupOldCachedQueries();
     await cleanupExpiredSessions();
 });
+
+app.use(cors({
+    origin: "http://localhost:5173", // Allow frontend to access backend
+    credentials: true // If using cookies for session handling
+}));
 
 app.use('/api/components', componentsRoutes);
 app.use('/api/session-builds', sessionBuildsRoutes);
