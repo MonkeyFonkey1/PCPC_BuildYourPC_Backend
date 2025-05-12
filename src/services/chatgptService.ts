@@ -50,7 +50,7 @@ function cleanPrice(price: any): number {
 export async function getRecommendedParts(budget: number, preferences: string): Promise<any> {
     const prompt = `
         I am building a PC with a budget of ${budget} EUR. My preferences are: ${preferences}.
-        Please recommend a compatible list of components (CPU, Motherboard, RAM, GPU, Storage, PSU, Case, CPU Cooler, Case Fans).
+        Please recommend a compatible list of components (CPU, Motherboard, RAM, GPU, Storage, PSU, Case, CPU Cooler, Case Fans) and do not under any circumstances go over the budget!
         Just list the component types and their recommended model names, no extra explanation.
         Example response:
         {

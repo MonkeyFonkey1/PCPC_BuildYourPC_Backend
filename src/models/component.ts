@@ -4,9 +4,16 @@ export interface IComponent extends Document {
     type: string;
     brand: string;
     modelName: string;
-    socket?: string; // Optional field
+    socket?: string;
     price: number;
-    specs: Record<string, any>;
+    specs: Required<{
+        [key: string]: any; // Allow dynamic keys for different component specs
+        memoryType?: string; 
+        gpuSlot?: string;
+        sataPorts?: number;
+        nvmeSlots?: number;
+        wattage?: number;
+    }>;
     timestamp: Date;
 }
 

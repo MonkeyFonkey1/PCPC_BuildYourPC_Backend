@@ -24,7 +24,7 @@ export class AICompatibilityChecker {
             const gpuPower = parseInt(gpu?.specs.powerDraw || '0');
             const totalPowerNeeded = cpuPower + gpuPower;
 
-            if (psu.specs.wattage < totalPowerNeeded) {
+            if ((psu.specs?.wattage ?? 0) < totalPowerNeeded) {
                 issues.push(`❌ PSU (${psu.modelName}) wattage (${psu.specs.wattage}W) is insufficient. Required: ${totalPowerNeeded}W.`);
             }
         }

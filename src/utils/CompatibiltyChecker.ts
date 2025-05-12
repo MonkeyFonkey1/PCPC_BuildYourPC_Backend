@@ -48,9 +48,9 @@ export class CompatibilityChecker {
             const cpuPower = parseInt(cpu?.specs.tdp || '0');
             const gpuPower = parseInt(gpu?.specs.tdp || '0');
             const totalPowerNeeded = cpuPower + gpuPower;
-
-            if (psu.specs.wattage < totalPowerNeeded) {
-                issues.push(`❌ PSU (${psu.modelName}) wattage (${psu.specs.wattage}W) is insufficient. Required: ${totalPowerNeeded}W.`);
+        
+            if ((psu.specs?.wattage ?? 0) < totalPowerNeeded) {
+                issues.push(`❌ PSU (${psu.modelName}) wattage (${psu.specs?.wattage ?? 0}W) is insufficient. Required: ${totalPowerNeeded}W.`);
             }
         }
 
@@ -98,7 +98,7 @@ export class CompatibilityChecker {
 
     getCompatiblePSUs(cpu: IComponent, gpu: IComponent, allPSUs: IComponent[]): IComponent[] {
         const requiredWattage = (cpu?.specs.powerDraw || 0) + (gpu?.specs.powerDraw || 0);
-        return allPSUs.filter(psu => psu.specs.wattage >= requiredWattage);
+        return allPSUs.filter(psu => (psu.specs?.wattage ?? 0) >= requiredWattage);
     }
 
     getCompatibleCases(motherboard: IComponent, allCases: IComponent[]): IComponent[] {
@@ -106,9 +106,9 @@ export class CompatibilityChecker {
     }
 
     getCompatibleStorage(motherboard: IComponent, allStorage: IComponent[]): IComponent[] {
-        const availableSataPorts = motherboard.specs.sataPorts || 0;
-        const availableNvmeSlots = motherboard.specs.nvmeSlots || 0;
-
+        const availableSataPorts = motherboard.specs.SATAIII || motherboard.specs.sataPorts || 0;
+        const availableNvmeSlots = motherboard.specs["M.2Slots"] || motherboard.specs.nvmeSlots || 0;
+    
         return allStorage.filter(storage => {
             if (storage.specs.connectionType === 'SATA') {
                 return availableSataPorts > 0;
@@ -118,4 +118,5 @@ export class CompatibilityChecker {
             return false;
         });
     }
+    
 }

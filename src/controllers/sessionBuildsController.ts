@@ -44,6 +44,7 @@ export const getBuildById = async (req: Request, res: Response): Promise<void> =
     }
 };
 
+//endpoint creates a build with full components or updates an existing build but never by adding step by step components
 export const createOrUpdateBuild = async (req: Request, res: Response): Promise<void> => {
     try {
         let { sessionId } = req.params;
@@ -231,5 +232,48 @@ export const validateComponentStepByStep = async (req: Request, res: Response): 
         }
     } catch (error) {
         res.status(500).json({ message: 'Error validating component', error });
+    }
+};
+
+export const replaceComponentInBuild = async (req: Request, res: Response): Promise<void> => {
+    const { sessionId, buildId, componentType, newComponentId } = req.body;
+
+    try {
+        const sessionBuild = await SessionBuild.findOne({ sessionId });
+
+        if (!sessionBuild) {
+            res.status(404).json({ message: "Session not found" });
+            return;
+        }
+
+        let build = sessionBuild.builds.find((b) => b.buildId === buildId);
+
+        if (!build) {
+            res.status(404).json({ message: "Build not found" });
+            return;
+        }
+
+        // Find the new component in the database
+        const newComponent = await Component.findById(newComponentId).lean();
+
+        if (!newComponent) {
+            res.status(404).json({ message: "New component not found in the database" });
+            return;
+        }
+
+        // Replace the old component
+        build.components = build.components.map((comp) =>
+            comp.type === componentType ? newComponent : comp
+        );
+
+        // Recalculate total price
+        build.totalPrice = build.components.reduce((sum, comp) => sum + (comp.price || 0), 0);
+
+        await sessionBuild.save();
+
+        res.status(200).json({ message: "Component replaced successfully", build });
+    } catch (error) {
+        console.error("Error replacing component:", error);
+        res.status(500).json({ message: "Failed to replace component", error });
     }
 };
