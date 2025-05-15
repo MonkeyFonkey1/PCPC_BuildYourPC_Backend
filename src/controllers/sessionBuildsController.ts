@@ -44,7 +44,6 @@ export const getBuildById = async (req: Request, res: Response): Promise<void> =
     }
 };
 
-//endpoint creates a build with full components or updates an existing build but never by adding step by step components
 export const createOrUpdateBuild = async (req: Request, res: Response): Promise<void> => {
     try {
         let { sessionId } = req.params;

@@ -63,6 +63,7 @@ export const searchComponents = async (req: Request, res: Response): Promise<voi
             res.status(404).json({ message: "No build found in session" });
             return;
         }
+        
         const motherboardFromBuild = build.components.find((c: any) => c.type === "Motherboard") as IComponent;
         const motherboard = await getFullComponent(motherboardFromBuild);
 
