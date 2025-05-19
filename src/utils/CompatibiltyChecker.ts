@@ -20,7 +20,6 @@ export class CompatibilityChecker {
 
         console.log("🔍 Starting Compatibility Checks...");
 
-        // ✅ CPU & Motherboard Socket Compatibility
         if (cpu && motherboard) {
             const cpuSocket = cpu.socket?.trim().toLowerCase() || cpu.specs.socket?.trim().toLowerCase();
             const motherboardSocket = motherboard.socket?.trim().toLowerCase() || motherboard.specs.socket?.trim().toLowerCase();
@@ -34,7 +33,7 @@ export class CompatibilityChecker {
             console.log("⚠️ CPU or Motherboard not found.");
         }
 
-        // ✅ RAM & Motherboard Memory Type
+
         if (ram && motherboard) {
             console.log(`Checking RAM (${ram.modelName}) and Motherboard (${motherboard.modelName}) memory type compatibility...`);
             if (ram.specs.memoryType !== motherboard.specs.memoryType) {
@@ -42,7 +41,6 @@ export class CompatibilityChecker {
             }
         }
 
-        // ✅ PSU Wattage Check (CPU + GPU Power Draw)
         if (psu) {
             console.log("Checking PSU wattage...");
             const cpuPower = parseInt(cpu?.specs.tdp || '0');
@@ -54,7 +52,6 @@ export class CompatibilityChecker {
             }
         }
 
-        // ✅ GPU Size & PC Case Size
         if (gpu && pcCase) {
             console.log("Checking GPU size and PC case compatibility...");
             const gpuLength = parseInt(gpu.specs.length || '0');
@@ -65,7 +62,6 @@ export class CompatibilityChecker {
             }
         }
 
-        // ✅ Storage Compatibility (SATA/NVMe)
         if (motherboard && storage.length) {
             console.log("Checking Storage compatibility with Motherboard...");
             const availableSataPorts = motherboard.specs.sataPorts || 0;
@@ -87,7 +83,6 @@ export class CompatibilityChecker {
         return issues;
     }
 
-    // New Methods (For Real-Time Filtering)
     getCompatibleCPUs(motherboard: IComponent, allCPUs: IComponent[]): IComponent[] {
         return allCPUs.filter(cpu => cpu.socket === motherboard.socket || cpu.specs.socket === motherboard.specs.socket);
     }
