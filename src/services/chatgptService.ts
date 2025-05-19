@@ -21,7 +21,7 @@ function safeParseJSON(jsonString: string): any {
     try {
         return JSON.parse(jsonString);
     } catch (error) {
-        console.warn("⚠️ GPT returned malformed JSON. Attempting auto-fix...");
+        console.warn("GPT returned malformed JSON. Attempting auto-fix...");
 
         const fixedString = jsonString
             .replace(/,\s*([\]}])/g, '$1') 
@@ -52,6 +52,7 @@ export async function getRecommendedParts(budget: number, preferences: string): 
         I am building a PC with a budget of ${budget} EUR. My preferences are: ${preferences}.
         Please recommend a compatible list of components (CPU, Motherboard, RAM, GPU, Storage, PSU, Case, CPU Cooler, Case Fans) and do not under any circumstances go over the budget!
         Just list the component types and their recommended model names, no extra explanation.
+        The response must be in valid JSON format! 
         Example response:
         {
             "CPU": "Intel Core i7-13700K",
@@ -93,7 +94,8 @@ export async function getComponentDetails(componentType: string, modelName: stri
         - No trailing commas.
         - No comments or extra text.
         - No markdown formatting like \`\`\`json.
-        Format the response as JSON with keys: type, brand, modelName, price, specs (detailed object with all important attributes like socket, wattage, memoryType, length, etc.).
+        Format the response as JSON with keys: type, brand, modelName, price, specs 
+        (detailed object with all important attributes like socket, wattage, memoryType, length, etc.).
         Example response for CPU:
         {
             "type": "CPU",

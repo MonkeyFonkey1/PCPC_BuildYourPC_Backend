@@ -69,6 +69,28 @@ export const searchComponents = async (req: Request, res: Response): Promise<voi
 
         if (!motherboard || !motherboard.specs) {
              res.status(400).json({ message: "No valid motherboard specs found in build" });
+             return;
+        }
+
+
+        const cacheKey = {
+            type,
+            motherboardSocket: motherboard.specs.socket,
+            memoryType: motherboard.specs.memoryType,
+            sata: motherboard.specs.sataPorts || motherboard.specs.SATAIII,
+            nvme: motherboard.specs.nvmeSlots || motherboard.specs["M.2Slots"]
+        };
+
+        const cached = await CachedQuery.findOne({
+            query_type: "compatibility_search",
+            query_params: cacheKey,
+            timestamp: { $gte: new Date(Date.now() - CACHE_EXPIRY_MS) }
+        }).lean();
+
+        if (cached) {
+            console.log("⚡ Cache hit (compatibility search)");
+            res.json(cached.results);
+            return;
         }
 
         let compatibleComponents = await Component.find(query).lean() as IComponent[];
@@ -96,6 +118,13 @@ export const searchComponents = async (req: Request, res: Response): Promise<voi
                 compatibleComponents = checker.getCompatibleCases(motherboard as IComponent, compatibleComponents);
                 break;
         }
+
+        await CachedQuery.create({
+            query_type: "compatibility_search",
+            query_params: cacheKey,
+            results: compatibleComponents
+        });
+        
 
         res.json(compatibleComponents);
     } catch (error) {
