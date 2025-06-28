@@ -14,10 +14,8 @@ dotenv.config();
 connectDB();
 
 const app = express();
-// Middleware
 app.use(express.json());
 
-// Default Route
 app.get('/', (req, res) => {
     res.send('PCPC-Build-Your-PC Backend is Running');
 });
@@ -30,7 +28,7 @@ cron.schedule('0 * * * *', async () => {
 
 app.use(cors({
     origin: "http://localhost:5173", // Allow frontend to access backend
-    credentials: true // If using cookies for session handling
+    credentials: true // Allow cookies to be sent with requests
 }));
 
 app.use('/api/components', componentsRoutes);

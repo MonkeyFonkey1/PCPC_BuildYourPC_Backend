@@ -7,7 +7,7 @@ interface IComponent {
     price: number;
 }
 
-// Interface for a single build in a session
+
 interface IBuild {
     buildId: string;
     components: IComponent[];

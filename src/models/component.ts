@@ -7,7 +7,7 @@ export interface IComponent extends Document {
     socket?: string;
     price: number;
     specs: Required<{
-        [key: string]: any; // Allow dynamic keys for different component specs
+        [key: string]: any; 
         memoryType?: string; 
         gpuSlot?: string;
         sataPorts?: number;

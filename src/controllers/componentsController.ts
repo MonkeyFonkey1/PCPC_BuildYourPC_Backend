@@ -101,15 +101,15 @@ export const searchComponents = async (req: Request, res: Response): Promise<voi
             case "RAM":
                 compatibleComponents = checker.getCompatibleRAM(motherboard as IComponent, compatibleComponents);
                 break;
-                case "Storage":
-                    if (!motherboard) {
-                        res.status(400).json({ message: "Motherboard is null" });
-                        return;
-                    }
-                    console.log("📦 Storage Filtering — Mobo Specs:", motherboard.specs);
-                    compatibleComponents = checker.getCompatibleStorage(motherboard as IComponent, compatibleComponents);
-                    console.log("📦 Compatible Storage Found:", compatibleComponents.length);
-                    break;
+                // case "Storage":
+                //     if (!motherboard) {
+                //         res.status(400).json({ message: "Motherboard is null" });
+                //         return;
+                //     }
+                //     console.log("📦 Storage Filtering — Mobo Specs:", motherboard.specs);
+                //     compatibleComponents = checker.getCompatibleStorage(motherboard as IComponent, compatibleComponents);
+                //     console.log("📦 Compatible Storage Found:", compatibleComponents.length);
+                //     break;
             case "CPU":
                 compatibleComponents = checker.getCompatibleCPUs(motherboard as IComponent, compatibleComponents);
                 break;
@@ -175,7 +175,12 @@ export const getCompatibleMotherboards = async (req: Request, res: Response): Pr
 
         
         if (fullRAM?.specs?.memoryType) {
-            motherboards = motherboards.filter(mb => mb.specs?.memoryType === fullRAM.specs.memoryType);
+             const ramType = fullRAM.specs.memoryType;
+        motherboards = motherboards.filter(mb => {
+        const mbMemoryType = mb.specs?.memoryType;
+        return mbMemoryType && mbMemoryType.toUpperCase() === ramType.toUpperCase();
+    });
+
         }
 
         res.status(200).json(motherboards);
@@ -263,50 +268,3 @@ export const deleteComponent = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error deleting component', error });
     }
 };
-
-// export const searchComponentsWithoutCompatibilty = async (req: Request, res: Response): Promise<void> => {
-//     const { type, socket, memoryType, wattage, brand, minPrice, maxPrice } = req.query;
-
-//     // Build the search query object
-//     const query: any = {};
-//     if (type) query.type = type;
-//     if (socket) query['specs.socket'] = socket;
-//     if (memoryType) query['specs.memoryType'] = memoryType;
-//     if (wattage) query['specs.wattage'] = { $gte: Number(wattage) };
-//     if (brand) query.brand = brand;
-//     if (minPrice && maxPrice) query.price = { $gte: Number(minPrice), $lte: Number(maxPrice) };
-
-//     try {
-//         // 1️⃣ Check Cache First
-//         const cachedQuery = await CachedQuery.findOne({
-//             query_type: 'component_search',
-//             query_params: query,
-//             timestamp: { $gte: new Date(Date.now() - CACHE_EXPIRY_MS) },
-//         }).lean();
-
-//         if (cachedQuery) {
-//             console.log('✅ Cache hit: Returning cached results.');
-//              res.json(cachedQuery.results); // ✅ Add `return` to stop function execution
-//              return;
-//         }
-
-//         // 2️⃣ No Cache — Perform Real Query
-//         const components = await Component.find(query).lean();
-
-//         // 3️⃣ Save Results to Cache
-//         await CachedQuery.create({
-//             query_type: 'component_search',
-//             query_params: query,
-//             results: components,
-//         });
-
-//         console.log('✅ Cache miss: Fetched fresh data and saved to cache.');
-//         res.json(components); // ✅ Ensure only ONE response is sent
-//         return;
-
-//     } catch (error) {
-//         console.error('❌ Error in searchComponents:', error);
-//         res.status(500).json({ message: 'Error searching components', error });
-//     }
-// };
-

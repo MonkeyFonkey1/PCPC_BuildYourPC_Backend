@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import Component from '../models/component';
 import SessionBuild from '../models/sessionBuild';
-import { AICompatibilityChecker } from '../utils/AICompatibilityChecker'; // NEW FILE
+import { AICompatibilityChecker } from '../utils/AICompatibilityChecker'; 
 import { getRecommendedParts, getComponentDetails, getReplacementComponent } from '../services/chatgptService';
 import { IComponent } from '../models/component';
 import { v4 as uuidv4 } from 'uuid';

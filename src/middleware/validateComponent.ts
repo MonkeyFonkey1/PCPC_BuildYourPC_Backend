@@ -4,7 +4,7 @@ import {
     componentCreationSchema,
 } from '../schemas/componentSchema';
 
-// Middleware for validating component updates (PUT)
+
 export const validateComponent = (
     req: Request,
     res: Response,
@@ -21,7 +21,7 @@ export const validateComponent = (
     next();
 };
 
-// Middleware for validating component creation (POST)
+
 export const validateComponentForCreation = (
     req: Request,
     res: Response,

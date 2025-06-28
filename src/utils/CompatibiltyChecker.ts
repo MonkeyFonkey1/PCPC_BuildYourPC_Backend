@@ -62,22 +62,22 @@ export class CompatibilityChecker {
             }
         }
 
-        if (motherboard && storage.length) {
-            console.log("Checking Storage compatibility with Motherboard...");
-            const availableSataPorts = motherboard.specs.sataPorts || 0;
-            const availableNvmeSlots = motherboard.specs.nvmeSlots || 0;
+        // if (motherboard && storage.length) {
+        //     console.log("Checking Storage compatibility with Motherboard...");
+        //     const availableSataPorts = motherboard.specs.sataPorts || 0;
+        //     const availableNvmeSlots = motherboard.specs.nvmeSlots || 0;
 
-            const sataDrives = storage.filter(s => s.specs.connectionType === 'SATA').length;
-            const nvmeDrives = storage.filter(s => s.specs.connectionType === 'NVMe').length;
+        //     const sataDrives = storage.filter(s => s.specs.connectionType === 'SATA').length;
+        //     const nvmeDrives = storage.filter(s => s.specs.connectionType === 'NVMe').length;
 
-            if (sataDrives > availableSataPorts) {
-                issues.push(`❌ Not enough SATA ports on Motherboard (${motherboard.modelName}). Available: ${availableSataPorts}, Required: ${sataDrives}.`);
-            }
+        //     if (sataDrives > availableSataPorts) {
+        //         issues.push(`❌ Not enough SATA ports on Motherboard (${motherboard.modelName}). Available: ${availableSataPorts}, Required: ${sataDrives}.`);
+        //     }
 
-            if (nvmeDrives > availableNvmeSlots) {
-                issues.push(`❌ Not enough NVMe slots on Motherboard (${motherboard.modelName}). Available: ${availableNvmeSlots}, Required: ${nvmeDrives}.`);
-            }
-        }
+        //     if (nvmeDrives > availableNvmeSlots) {
+        //         issues.push(`❌ Not enough NVMe slots on Motherboard (${motherboard.modelName}). Available: ${availableNvmeSlots}, Required: ${nvmeDrives}.`);
+        //     }
+        // }
 
         console.log("🔍 Compatibility Check Complete.");
         return issues;
