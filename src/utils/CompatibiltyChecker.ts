@@ -20,7 +20,6 @@ export class CompatibilityChecker {
 
         console.log("🔍 Starting Compatibility Checks...");
 
-        // ✅ CPU & Motherboard Socket Compatibility
         if (cpu && motherboard) {
             const cpuSocket = cpu.socket?.trim().toLowerCase() || cpu.specs.socket?.trim().toLowerCase();
             const motherboardSocket = motherboard.socket?.trim().toLowerCase() || motherboard.specs.socket?.trim().toLowerCase();
@@ -34,7 +33,7 @@ export class CompatibilityChecker {
             console.log("⚠️ CPU or Motherboard not found.");
         }
 
-        // ✅ RAM & Motherboard Memory Type
+
         if (ram && motherboard) {
             console.log(`Checking RAM (${ram.modelName}) and Motherboard (${motherboard.modelName}) memory type compatibility...`);
             if (ram.specs.memoryType !== motherboard.specs.memoryType) {
@@ -42,19 +41,17 @@ export class CompatibilityChecker {
             }
         }
 
-        // ✅ PSU Wattage Check (CPU + GPU Power Draw)
         if (psu) {
             console.log("Checking PSU wattage...");
             const cpuPower = parseInt(cpu?.specs.tdp || '0');
             const gpuPower = parseInt(gpu?.specs.tdp || '0');
             const totalPowerNeeded = cpuPower + gpuPower;
-
-            if (psu.specs.wattage < totalPowerNeeded) {
-                issues.push(`❌ PSU (${psu.modelName}) wattage (${psu.specs.wattage}W) is insufficient. Required: ${totalPowerNeeded}W.`);
+        
+            if ((psu.specs?.wattage ?? 0) < totalPowerNeeded) {
+                issues.push(`❌ PSU (${psu.modelName}) wattage (${psu.specs?.wattage ?? 0}W) is insufficient. Required: ${totalPowerNeeded}W.`);
             }
         }
 
-        // ✅ GPU Size & PC Case Size
         if (gpu && pcCase) {
             console.log("Checking GPU size and PC case compatibility...");
             const gpuLength = parseInt(gpu.specs.length || '0');
@@ -65,29 +62,27 @@ export class CompatibilityChecker {
             }
         }
 
-        // ✅ Storage Compatibility (SATA/NVMe)
-        if (motherboard && storage.length) {
-            console.log("Checking Storage compatibility with Motherboard...");
-            const availableSataPorts = motherboard.specs.sataPorts || 0;
-            const availableNvmeSlots = motherboard.specs.nvmeSlots || 0;
+        // if (motherboard && storage.length) {
+        //     console.log("Checking Storage compatibility with Motherboard...");
+        //     const availableSataPorts = motherboard.specs.sataPorts || 0;
+        //     const availableNvmeSlots = motherboard.specs.nvmeSlots || 0;
 
-            const sataDrives = storage.filter(s => s.specs.connectionType === 'SATA').length;
-            const nvmeDrives = storage.filter(s => s.specs.connectionType === 'NVMe').length;
+        //     const sataDrives = storage.filter(s => s.specs.connectionType === 'SATA').length;
+        //     const nvmeDrives = storage.filter(s => s.specs.connectionType === 'NVMe').length;
 
-            if (sataDrives > availableSataPorts) {
-                issues.push(`❌ Not enough SATA ports on Motherboard (${motherboard.modelName}). Available: ${availableSataPorts}, Required: ${sataDrives}.`);
-            }
+        //     if (sataDrives > availableSataPorts) {
+        //         issues.push(`❌ Not enough SATA ports on Motherboard (${motherboard.modelName}). Available: ${availableSataPorts}, Required: ${sataDrives}.`);
+        //     }
 
-            if (nvmeDrives > availableNvmeSlots) {
-                issues.push(`❌ Not enough NVMe slots on Motherboard (${motherboard.modelName}). Available: ${availableNvmeSlots}, Required: ${nvmeDrives}.`);
-            }
-        }
+        //     if (nvmeDrives > availableNvmeSlots) {
+        //         issues.push(`❌ Not enough NVMe slots on Motherboard (${motherboard.modelName}). Available: ${availableNvmeSlots}, Required: ${nvmeDrives}.`);
+        //     }
+        // }
 
         console.log("🔍 Compatibility Check Complete.");
         return issues;
     }
 
-    // New Methods (For Real-Time Filtering)
     getCompatibleCPUs(motherboard: IComponent, allCPUs: IComponent[]): IComponent[] {
         return allCPUs.filter(cpu => cpu.socket === motherboard.socket || cpu.specs.socket === motherboard.specs.socket);
     }
@@ -98,7 +93,7 @@ export class CompatibilityChecker {
 
     getCompatiblePSUs(cpu: IComponent, gpu: IComponent, allPSUs: IComponent[]): IComponent[] {
         const requiredWattage = (cpu?.specs.powerDraw || 0) + (gpu?.specs.powerDraw || 0);
-        return allPSUs.filter(psu => psu.specs.wattage >= requiredWattage);
+        return allPSUs.filter(psu => (psu.specs?.wattage ?? 0) >= requiredWattage);
     }
 
     getCompatibleCases(motherboard: IComponent, allCases: IComponent[]): IComponent[] {
@@ -106,9 +101,9 @@ export class CompatibilityChecker {
     }
 
     getCompatibleStorage(motherboard: IComponent, allStorage: IComponent[]): IComponent[] {
-        const availableSataPorts = motherboard.specs.sataPorts || 0;
-        const availableNvmeSlots = motherboard.specs.nvmeSlots || 0;
-
+        const availableSataPorts = motherboard.specs.SATAIII || motherboard.specs.sataPorts || 0;
+        const availableNvmeSlots = motherboard.specs["M.2Slots"] || motherboard.specs.nvmeSlots || 0;
+    
         return allStorage.filter(storage => {
             if (storage.specs.connectionType === 'SATA') {
                 return availableSataPorts > 0;
@@ -118,4 +113,5 @@ export class CompatibilityChecker {
             return false;
         });
     }
+    
 }

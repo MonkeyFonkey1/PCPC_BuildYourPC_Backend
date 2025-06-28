@@ -21,7 +21,7 @@ function safeParseJSON(jsonString: string): any {
     try {
         return JSON.parse(jsonString);
     } catch (error) {
-        console.warn("⚠️ GPT returned malformed JSON. Attempting auto-fix...");
+        console.warn("GPT returned malformed JSON. Attempting auto-fix...");
 
         const fixedString = jsonString
             .replace(/,\s*([\]}])/g, '$1') 
@@ -50,8 +50,9 @@ function cleanPrice(price: any): number {
 export async function getRecommendedParts(budget: number, preferences: string): Promise<any> {
     const prompt = `
         I am building a PC with a budget of ${budget} EUR. My preferences are: ${preferences}.
-        Please recommend a compatible list of components (CPU, Motherboard, RAM, GPU, Storage, PSU, Case, CPU Cooler, Case Fans).
+        Please recommend a compatible list of components (CPU, Motherboard, RAM, GPU, Storage, PSU, Case, CPU Cooler, Case Fans) and do not under any circumstances go over the budget!
         Just list the component types and their recommended model names, no extra explanation.
+        The response must be in valid JSON format! 
         Example response:
         {
             "CPU": "Intel Core i7-13700K",
@@ -93,7 +94,8 @@ export async function getComponentDetails(componentType: string, modelName: stri
         - No trailing commas.
         - No comments or extra text.
         - No markdown formatting like \`\`\`json.
-        Format the response as JSON with keys: type, brand, modelName, price, specs (detailed object with all important attributes like socket, wattage, memoryType, length, etc.).
+        Format the response as JSON with keys: type, brand, modelName, price, specs 
+        (detailed object with all important attributes like socket, wattage, memoryType, length, etc.).
         Example response for CPU:
         {
             "type": "CPU",
@@ -123,7 +125,7 @@ export async function getComponentDetails(componentType: string, modelName: stri
     const rawContent = response.choices[0]?.message.content || '{}';
     const cleanedContent = cleanGPTResponse(rawContent);
 
-     // Optional log before parsing (helps track future problems)
+     
      if (/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g.test(cleanedContent)) {
         console.warn("⚠️ Possible unquoted keys detected in GPT response.");
     }
@@ -138,7 +140,6 @@ export async function getComponentDetails(componentType: string, modelName: stri
     return componentDetails;
 }
 
-// Fetch replacement component if incompatibility is found
 export async function getReplacementComponent(componentType: string, currentComponent: string, issue: string): Promise<string> {
     const prompt = `
         The component "${currentComponent}" (${componentType}) caused the following compatibility issue: "${issue}".

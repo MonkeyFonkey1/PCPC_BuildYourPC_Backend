@@ -7,7 +7,7 @@ interface IComponent {
     price: number;
 }
 
-// Interface for a single build in a session
+
 interface IBuild {
     buildId: string;
     components: IComponent[];
@@ -45,7 +45,7 @@ const SessionBuildSchema: Schema = new Schema(
         sessionId: { type: String, required: true, unique: true },
         builds: [BuildSchema],
     },
-    { collection: 'session_builds' } // Explicitly set the collection name
+    { collection: 'session_builds' } 
 );
 
 export default mongoose.model<ISessionBuild>('SessionBuild', SessionBuildSchema);

@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from 'uuid';
 import Component, { IComponent } from '../models/component';
 import { CompatibilityChecker } from '../utils/CompatibiltyChecker';
 
-// Retrieve all builds in a session
 export const getAllBuildsInSession = async (req: Request, res: Response): Promise<void> => {
     try {
         const { sessionId } = req.params;
@@ -22,7 +21,6 @@ export const getAllBuildsInSession = async (req: Request, res: Response): Promis
     }
 };
 
-// Retrieve a specific build
 export const getBuildById = async (req: Request, res: Response): Promise<void> => {
     try {
         const { sessionId, buildId } = req.params;
@@ -46,15 +44,18 @@ export const getBuildById = async (req: Request, res: Response): Promise<void> =
     }
 };
 
-// Create or update a specific build
 export const createOrUpdateBuild = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { sessionId } = req.params;
+        let { sessionId } = req.params;
         const { buildId, components, totalPrice, aiGenerated } = req.body;
 
-        // Generate createdAt and expiresAt if not provided
+        
+        if (!sessionId) {
+            sessionId = uuidv4();
+        }
+
         const createdAt = req.body.createdAt || new Date();
-        const expiresAt = req.body.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // One week
+        const expiresAt = req.body.expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000);  // 24 hours from now 
 
         // Validate the input using Joi
         const { error } = sessionBuildSchema.validate(
@@ -69,17 +70,15 @@ export const createOrUpdateBuild = async (req: Request, res: Response): Promise<
             return;
         }
 
-        // Fetch or create the session build
         const sessionBuild = await SessionBuild.findOneAndUpdate(
             { sessionId },
-            { $setOnInsert: { sessionId, builds: [] } }, // Create session if not exists
+            { $setOnInsert: { sessionId, builds: [] } },
             { new: true, upsert: true }
         );
 
         const existingBuildIndex = sessionBuild.builds.findIndex((b) => b.buildId === buildId);
 
         if (existingBuildIndex !== -1) {
-            // Update existing build
             sessionBuild.builds[existingBuildIndex] = {
                 buildId,
                 components,
@@ -89,7 +88,6 @@ export const createOrUpdateBuild = async (req: Request, res: Response): Promise<
                 aiGenerated,
             };
         } else {
-            // Add new build
             sessionBuild.builds.push({
                 buildId: buildId || uuidv4(),
                 components,
@@ -110,7 +108,6 @@ export const createOrUpdateBuild = async (req: Request, res: Response): Promise<
     }
 };
 
-// Delete a specific build
 export const deleteBuildById = async (req: Request, res: Response): Promise<void> => {
     try {
         const { sessionId, buildId } = req.params;
@@ -134,14 +131,12 @@ export const validateSessionBuild = async (req: Request, res: Response): Promise
     try {
         const { sessionId } = req.body;
 
-        // Step 1: Find the session build
         const sessionBuild = await SessionBuild.findOne({ sessionId });
         if (!sessionBuild) {
             res.status(404).json({ message: "Session build not found" });
             return;
         }
 
-    // Extract components and normalize names
         const components = sessionBuild.builds.flatMap((b) => b.components);
         const uniqueComponents = components.filter((component, index, self) => {
             if (!component || Object.keys(component).length === 0) return false;
@@ -152,19 +147,16 @@ export const validateSessionBuild = async (req: Request, res: Response): Promise
             );
         });
 
-        //console.log("Cleaned components array:", uniqueComponents);
-
-        // Normalize model names
+        
         const normalizedModelNames = uniqueComponents.map((c) =>
             c.modelName.trim().toLowerCase()
         );
-        //console.log("Normalized Model Names for Query:", normalizedModelNames);
+        
 
         const fetchedComponents = await Component.find({
             modelName: { $in: normalizedModelNames.map(name => new RegExp(`^${name}$`, 'i')) },
         }).lean();
 
-        //console.log("Fetched Components from Database:", fetchedComponents);
 
         //Compare fetched components with required components
         const missingComponents = normalizedModelNames.filter(
@@ -181,7 +173,7 @@ export const validateSessionBuild = async (req: Request, res: Response): Promise
             return;
         }
 
-        // Step 5: Compatibility check
+        //Compatibility check
         const checker = new CompatibilityChecker(fetchedComponents as IComponent[]);
         const compatibilityIssues = checker.validate();
 
@@ -202,11 +194,6 @@ export const validateSessionBuild = async (req: Request, res: Response): Promise
     }
 };
 
-
-
-
-
-// Validate a component step by step
 export const validateComponentStepByStep = async (req: Request, res: Response): Promise<void> => {
     try {
         const { sessionId } = req.params;
@@ -244,5 +231,48 @@ export const validateComponentStepByStep = async (req: Request, res: Response): 
         }
     } catch (error) {
         res.status(500).json({ message: 'Error validating component', error });
+    }
+};
+
+export const replaceComponentInBuild = async (req: Request, res: Response): Promise<void> => {
+    const { sessionId, buildId, componentType, newComponentId } = req.body;
+
+    try {
+        const sessionBuild = await SessionBuild.findOne({ sessionId });
+
+        if (!sessionBuild) {
+            res.status(404).json({ message: "Session not found" });
+            return;
+        }
+
+        let build = sessionBuild.builds.find((b) => b.buildId === buildId);
+
+        if (!build) {
+            res.status(404).json({ message: "Build not found" });
+            return;
+        }
+
+        // Find the new component in the database
+        const newComponent = await Component.findById(newComponentId).lean();
+
+        if (!newComponent) {
+            res.status(404).json({ message: "New component not found in the database" });
+            return;
+        }
+
+        // Replace the old component
+        build.components = build.components.map((comp) =>
+            comp.type === componentType ? newComponent : comp
+        );
+
+        // Recalculate total price
+        build.totalPrice = build.components.reduce((sum, comp) => sum + (comp.price || 0), 0);
+
+        await sessionBuild.save();
+
+        res.status(200).json({ message: "Component replaced successfully", build });
+    } catch (error) {
+        console.error("Error replacing component:", error);
+        res.status(500).json({ message: "Failed to replace component", error });
     }
 };
