@@ -114,6 +114,8 @@ export const searchComponents = async (req: Request, res: Response): Promise<voi
                 compatibleComponents = checker.getCompatibleCPUs(motherboard as IComponent, compatibleComponents);
                 break;
             case "Case":
+                compatibleComponents = checker.getCompatibleCases(motherboard as IComponent, compatibleComponents);
+                break;
             case "PC Case":
                 compatibleComponents = checker.getCompatibleCases(motherboard as IComponent, compatibleComponents);
                 break;
